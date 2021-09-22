@@ -1,14 +1,20 @@
 package com.wei.sjwt.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.wei.sjwt.entity.UserEntity;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wei.sjwt.exception.ApiException;
 import com.wei.sjwt.mapper.UserMapper;
+import com.wei.sjwt.model.entity.UserEntity;
 import com.wei.sjwt.model.param.LoginParam;
+import com.wei.sjwt.model.param.UserParam;
 import com.wei.sjwt.model.vo.UserVo;
 import com.wei.sjwt.security.JwtManager;
 import com.wei.sjwt.security.UserDetail;
 import com.wei.sjwt.service.ResourceService;
+import com.wei.sjwt.service.RoleService;
 import com.wei.sjwt.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +24,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class UserServiceImpl implements UserService, UserDetailsService {
+@Transactional(rollbackFor = Exception.class)
+public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> implements UserService, UserDetailsService {
 
     @Autowired
     private UserMapper userMapper;
@@ -33,6 +43,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     JwtManager jwtManager;
     @Autowired
     private ResourceService resourceService;
+    @Autowired
+    private RoleService roleService;
 
     @Override
     public UserVo login(LoginParam param) {
@@ -77,7 +89,57 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
         // 走到这代表查询到了实体对象，那就返回自定义的UserDetail对象
-        System.out.println("authorities: " + authorities);
+        // System.out.println("authorities: " + authorities);
         return new UserDetail(user, authorities);
+    }
+
+    @Override
+    public void createUser(UserParam param) {
+        if (lambdaQuery().eq(UserEntity::getUsername, param.getUsername()).one() != null) {
+            throw new ApiException("用户名已存在");
+        }
+
+        UserEntity user = new UserEntity();
+        BeanUtils.copyProperties(param, user);
+        // 密码加密
+        user.setPassword(passwordEncoder.encode(param.getPassword()));
+        save(user);
+
+        // 用户授权(角色)
+        if (!String.valueOf(param.getRole()).equals("")) {
+            roleService.insertUserRole(user.getId(), param.getRole());
+        }
+
+    }
+
+    @Override
+    public void updateUser(UserParam param) {
+        if (lambdaQuery().eq(UserEntity::getUsername, param.getUsername())
+                .ne(UserEntity::getId, param.getId()).one() != null) {
+            throw new ApiException("用户名已存在");
+        }
+
+        UserEntity user = new UserEntity();
+        BeanUtils.copyProperties(param, user);
+
+        updateById(user);
+    }
+
+    @Override
+    public void deleteUser(String[] ids) {
+        if (ObjectUtils.isEmpty(ids)) {
+            throw new ApiException("用户 id 不能为空");
+        }
+
+        baseMapper.deleteBatchIds(Arrays.asList(ids));
+    }
+
+    @Override
+    public IPage<UserVo> selectUser(Page<UserVo> page) {
+        QueryWrapper<UserVo> queryWrapper = new QueryWrapper<>();
+        // queryWrapper.orderByDesc("id");
+        queryWrapper.orderByAsc("id");
+
+        return baseMapper.selectPage(page, queryWrapper);
     }
 }

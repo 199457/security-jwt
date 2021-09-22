@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wei.sjwt.mapper.UserMapper">
+
+    <select id="selectPage" resultType="com.wei.sjwt.model.vo.UserVo">
+        select id,
+               username
+        from users ${ew.customSqlSegment}
+    </select>
+
+</mapper>

@@ -29,7 +29,7 @@ public class MySecurityMetadataSource implements SecurityMetadataSource {
         // 该对象是Spring Security帮我们封装好的，可以通过该对象获取 request 等信息
         FilterInvocation filterInvocation = (FilterInvocation) object;
         HttpServletRequest request = filterInvocation.getRequest();
-        System.out.println("RESOURCES: " + RESOURCES);
+        // System.out.println("RESOURCES1: " + RESOURCES);
         // 遍历所有权限资源，以和当前请求所需的权限进行匹配
         for (ResourceEntity resource : RESOURCES) {
             // 因为我们url资源是这种格式：GET:/API/user/test/{id}，冒号前面是请求方法，冒号后面是请求路径，所以要字符串拆分
@@ -42,6 +42,7 @@ public class MySecurityMetadataSource implements SecurityMetadataSource {
                 return Collections.singletonList(new SecurityConfig(String.valueOf(resource.getId())));
             }
         }
+        // System.out.println("RESOURCES2: " + RESOURCES);
         // 走到这里就代表该请求无需授权即可访问，返回空
         return null;
     }

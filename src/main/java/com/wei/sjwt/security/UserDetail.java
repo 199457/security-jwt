@@ -1,6 +1,6 @@
 package com.wei.sjwt.security;
 
-import com.wei.sjwt.entity.UserEntity;
+import com.wei.sjwt.model.entity.UserEntity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
