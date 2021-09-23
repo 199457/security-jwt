@@ -12,7 +12,15 @@ spring:
   redis:
     port: 6379
     host: localhost
+  cache: # 开启缓存注解
+    type: redis # 使用 redis 缓存
+    redis:
+      time-to-live: 30000 # 毫秒
+      key-prefix: cache_ # key 前缀
+      use-key-prefix: true # 使用前缀
+      cache-null-values: true # 允许存储 null 值
   jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
     default-property-inclusion: non_null # response 返回值过滤空值字段
 
 security: # jwt 密钥
